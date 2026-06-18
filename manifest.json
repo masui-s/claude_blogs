@@ -1,0 +1,19 @@
+{
+  "name": "Claude Blogs",
+  "short_name": "Claude Blogs",
+  "description": "Claudeと学ぶ技術記事",
+  "lang": "ja",
+  "start_url": "/claude_blogs/",
+  "scope": "/claude_blogs/",
+  "display": "standalone",
+  "theme_color": "#1a1a2e",
+  "background_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/claude_blogs/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

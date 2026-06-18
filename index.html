@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Blogs</title>
+  <link rel="manifest" href="/claude_blogs/manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text: #1a1a2e;
+      --text-secondary: #6c757d;
+      --accent: #4a6fa5;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --bg-secondary: #161b22;
+        --text: #e6edf3;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+        --border: #30363d;
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.75rem 0;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem 0;
+    }
+
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .article-card {
+      display: block;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .article-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .article-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .article-date {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .article-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .status {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 4rem 0;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 0;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Claude Blogs</h1>
+      <p>Claudeと学ぶ技術記事</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="article-list" id="articleList">
+        <p class="status">読み込み中...</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">Claude Blogs</div>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/claude_blogs/sw.js');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function loadArticles() {
+      const list = document.getElementById('articleList');
+      try {
+        const res = await fetch('/claude_blogs/articles.json');
+        if (!res.ok) throw new Error();
+        const articles = await res.json();
+
+        if (articles.length === 0) {
+          list.innerHTML = '<p class="status">記事がありません</p>';
+          return;
+        }
+
+        list.innerHTML = articles.map(a => `
+          <a class="article-card" href="/claude_blogs/${escapeHtml(a.path)}">
+            <div class="article-title">${escapeHtml(a.title)}</div>
+            <div class="article-date">${escapeHtml(a.date)}</div>
+            <div class="article-description">${escapeHtml(a.description)}</div>
+          </a>
+        `).join('');
+      } catch {
+        list.innerHTML = '<p class="status">記事を読み込めませんでした</p>';
+      }
+    }
+
+    loadArticles();
+  </script>
+</body>
+</html>

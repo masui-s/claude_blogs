@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>クリーンアーキテクチャ入門</title>
+  <meta name="description" content="クリーンアーキテクチャの基本概念・依存関係ルール・各層の責務をわかりやすく解説します。">
+  <meta name="date" content="2026-06-18">
+  <meta property="og:title" content="クリーンアーキテクチャ入門">
+  <meta property="og:description" content="クリーンアーキテクチャの基本概念・依存関係ルール・各層の責務をわかりやすく解説します。">
+  <meta property="og:type" content="article">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text: #1a1a2e;
+      --text-secondary: #6c757d;
+      --accent: #4a6fa5;
+      --border: #e9ecef;
+      --code-bg: #f3f4f6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --bg-secondary: #161b22;
+        --text: #e6edf3;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+        --border: #30363d;
+        --code-bg: #1e2329;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+
+    header a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    article {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .article-header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .meta {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 1rem; }
+
+    ul, ol {
+      margin: 0 0 1rem 1.5rem;
+    }
+
+    li { margin-bottom: 0.3rem; }
+
+    code {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.875em;
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.875rem;
+    }
+
+    blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/claude_blogs/">← 記事一覧</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <article>
+        <div class="article-header">
+          <h1>クリーンアーキテクチャ入門</h1>
+          <p class="meta">2026-06-18</p>
+        </div>
+
+        <h2>クリーンアーキテクチャとは</h2>
+        <p>クリーンアーキテクチャは、Robert C. Martin（Uncle Bob）が提唱したソフトウェア設計の原則です。ビジネスロジックをフレームワーク・データベース・UI などの外部要素から独立させることを目的としています。</p>
+        <p>核心的な考え方は <strong>「依存関係ルール（Dependency Rule）」</strong> です。ソースコードの依存方向は常に内側（ビジネスルール）に向かわなければなりません。</p>
+
+        <h2>4つの同心円</h2>
+        <p>クリーンアーキテクチャは通常、4つの層として表現されます：</p>
+
+        <h3>1. Entities（エンティティ）</h3>
+        <p>最も内側の層。ビジネスルールを表すオブジェクトです。企業全体で共有される最重要のビジネスロジックを含み、外部の変化（DBの変更・UIの変更）に影響されません。</p>
+
+        <h3>2. Use Cases（ユースケース）</h3>
+        <p>アプリケーション固有のビジネスルールを担います。エンティティへの入出力フローを調整し、ユーザーの目標達成を助けるロジックをここに集約します。</p>
+
+        <h3>3. Interface Adapters（インターフェースアダプター）</h3>
+        <p>ユースケースやエンティティが扱いやすい形式と、外部（DB・Web・UI）が扱う形式の間でデータを変換します。Controller・Presenter・Gateway などがこの層に属します。</p>
+
+        <h3>4. Frameworks & Drivers（フレームワーク・ドライバー）</h3>
+        <p>最も外側の層。Webフレームワーク・データベース・UIなど、具体的な実装の詳細が含まれます。この層にはなるべく少ないコードしか書かないことが推奨されます。</p>
+
+        <h2>依存関係ルール</h2>
+        <blockquote>
+          <p>内側の円は外側の円について何も知らない</p>
+        </blockquote>
+        <p>外側の層の名前・関数・変数などを内側の層が参照してはいけません。データを外から内に渡す場合も、内側が定義したインターフェース（DTO）経由で行います。</p>
+
+        <h2>依存性逆転の原則（DIP）</h2>
+        <p>クリーンアーキテクチャの実現にはDIPが欠かせません。例として、ユースケース層からDBに依存する場合を考えます：</p>
+
+        <pre><code># 悪い例：Use Case が DB 実装に直接依存
+class CreateUserUseCase:
+    def __init__(self):
+        self.db = MySQLUserRepository()  # 具体実装に依存
+
+# 良い例：Use Case はインターフェースに依存
+class CreateUserUseCase:
+    def __init__(self, user_repo: UserRepository):  # 抽象に依存
+        self.user_repo = user_repo</code></pre>
+
+        <p>インターフェース（<code>UserRepository</code>）はユースケース層で定義し、MySQLの実装はアダプター層に置きます。こうすることで依存の矢印が内側を向きます。</p>
+
+        <h2>メリットとトレードオフ</h2>
+        <ul>
+          <li><strong>テスタビリティ</strong>：ビジネスロジックをDBや外部サービスなしでテストできる</li>
+          <li><strong>技術の交換可能性</strong>：DBやフレームワークを差し替えてもビジネスロジックは無傷</li>
+          <li><strong>独立したデプロイ</strong>：層を独立してデプロイ・更新できる</li>
+        </ul>
+        <p>一方で、小規模プロジェクトでは過剰設計になりがちです。チームの規模・プロダクトのライフサイクルを考慮して採用を判断しましょう。</p>
+      </article>
+    </div>
+  </main>
+</body>
+</html>
