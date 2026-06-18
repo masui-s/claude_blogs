@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オニオンアーキテクチャ完全ガイド — Jeffrey Palermo 原典（日本語解説）</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+:root {
+  --bg-page: #f5f5f7;
+  --bg-card: #ffffff;
+  --bg-code: #f6f8fa;
+  --bg-inline-code: #f3f4f6;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-heading: #111827;
+  --accent: #2563eb;
+  --border: #e5e7eb;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-code: 0 1px 2px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; }
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding: 48px 16px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+               "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI",
+               Meiryo, sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+.article {
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  padding: 56px 56px 64px;
+}
+.article-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+}
+.article-header h1 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+  line-height: 1.4;
+  color: var(--text-heading);
+  font-weight: 700;
+}
+.article-meta {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.article h2 {
+  font-size: 1.5rem;
+  margin: 48px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-heading);
+  font-weight: 700;
+  line-height: 1.5;
+}
+.article h3 {
+  font-size: 1.2rem;
+  margin: 32px 0 12px;
+  color: var(--text-heading);
+  font-weight: 700;
+  line-height: 1.5;
+}
+.article p { margin: 16px 0; }
+.article a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+}
+.article a:hover { border-bottom-color: var(--accent); }
+.article ul, .article ol { margin: 16px 0; padding-left: 1.6em; }
+.article li { margin: 6px 0; }
+.article li > ul, .article li > ol { margin: 6px 0; }
+.article code {
+  background: var(--bg-inline-code);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+               "Courier New", monospace;
+  font-size: 0.875em;
+  color: #1f2937;
+}
+.article pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  box-shadow: var(--shadow-code);
+  margin: 20px 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.article pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  white-space: pre;
+}
+.article blockquote {
+  margin: 20px 0;
+  padding: 12px 20px;
+  background: #f9fafb;
+  border-left: 3px solid var(--accent);
+  color: var(--text-secondary);
+  border-radius: 0 6px 6px 0;
+}
+.article blockquote p { margin: 8px 0; }
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  margin: 20px 0;
+  border-radius: 6px;
+  box-shadow: var(--shadow-code);
+}
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+.article th, .article td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  word-break: normal;
+}
+.article th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+.article tr:nth-child(even) td { background: #fafbfc; }
+.article hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.toc {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 0 0 40px;
+}
+.toc-title {
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text-heading);
+  font-size: 0.9375rem;
+}
+.toc ol { margin: 0; padding-left: 1.4em; }
+.toc li { margin: 4px 0; }
+.toc a {
+  color: var(--text-primary);
+  border-bottom: none;
+}
+.toc a:hover { color: var(--accent); }
+.article-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.diagram-wrap {
+  margin: 24px 0;
+  text-align: center;
+}
+.diagram-wrap svg {
+  max-width: 100%;
+  height: auto;
+}
+.diagram-caption {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+@media (max-width: 640px) {
+  body { padding: 12px 0; }
+  .article {
+    padding: 24px 16px 32px;
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .article-header h1 { font-size: 1.5rem; }
+  .article h2 { font-size: 1.25rem; margin: 36px 0 12px; }
+  .article h3 { font-size: 1.0625rem; }
+  .article pre { padding: 12px 14px; font-size: 0.8125rem; }
+  .toc { padding: 16px 18px; }
+}
+</style>
+</head>
+<body>
+<article class="article">
+  <header class="article-header">
+    <h1>オニオンアーキテクチャ完全ガイド — Jeffrey Palermo 原典（日本語解説）</h1>
+    <div class="article-meta">2026年6月18日 · Jeffrey Palermo 原典（2008〜2013）をもとに初学者向けに解説</div>
+  </header>
+
+  <nav class="toc">
+    <p class="toc-title">目次</p>
+    <ol>
+      <li><a href="#sec-1">Part 1 — オニオンアーキテクチャとは何か</a></li>
+      <li><a href="#sec-2">Part 2 — 実践例：CodeCampServer</a></li>
+      <li><a href="#sec-3">Part 3 — 従来型との比較と4つの原則</a></li>
+      <li><a href="#sec-4">Part 4 — 4年後の振り返り</a></li>
+      <li><a href="#sec-5">全4記事のエッセンス</a></li>
+    </ol>
+  </nav>
+
+  <!-- ===== PART 1 ===== -->
+  <h2 id="sec-1">Part 1 — オニオンアーキテクチャとは何か</h2>
+  <p><em>公開日: 2008年7月29日</em></p>
+  <p>
+    「オニオンアーキテクチャ」と名付けた設計手法について、これまで何度も講演してきました。
+    <strong>システム全体を通じて関心の分離を徹底する</strong>ことで、より保守しやすいアプリケーションが生まれると確信しています。
+  </p>
+
+  <blockquote>
+    <p><strong>この設計が向いている場面：</strong> 小規模なウェブサイトには向いていません。<strong>長期運用が前提のビジネスアプリ</strong>や<strong>複雑な業務ロジックを持つシステム</strong>に適しています。インターフェースを使った契約ベースの設計と、インフラの外部化を強制します。</p>
+  </blockquote>
+
+  <h3>従来型レイヤードアーキテクチャの問題</h3>
+  <p>最も多く見られる従来型の設計は、各層が下の層に依存する「積み重ね」構造です。</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif">
+      <rect x="80" y="16" width="400" height="48" rx="6" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="280" y="45" text-anchor="middle" font-size="14" font-weight="600" fill="#991b1b">UI（画面）</text>
+      <line x1="280" y1="64" x2="280" y2="82" stroke="#9ca3af" stroke-width="2"/>
+      <polygon points="280,88 274,78 286,78" fill="#9ca3af"/>
+      <text x="305" y="79" font-size="11" fill="#6b7280">依存</text>
+      <rect x="80" y="88" width="400" height="48" rx="6" fill="#fef9c3" stroke="#fde047" stroke-width="1.5"/>
+      <text x="280" y="117" text-anchor="middle" font-size="14" font-weight="600" fill="#854d0e">ビジネスロジック（業務処理）</text>
+      <line x1="280" y1="136" x2="280" y2="154" stroke="#9ca3af" stroke-width="2"/>
+      <polygon points="280,160 274,150 286,150" fill="#9ca3af"/>
+      <text x="305" y="151" font-size="11" fill="#6b7280">依存</text>
+      <rect x="80" y="160" width="400" height="48" rx="6" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+      <text x="280" y="189" text-anchor="middle" font-size="14" font-weight="600" fill="#166534">データアクセス（DB操作）</text>
+      <line x1="280" y1="208" x2="280" y2="226" stroke="#9ca3af" stroke-width="2"/>
+      <polygon points="280,232 274,222 286,222" fill="#9ca3af"/>
+      <text x="305" y="223" font-size="11" fill="#6b7280">依存</text>
+      <rect x="80" y="232" width="400" height="40" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="280" y="257" text-anchor="middle" font-size="14" font-weight="600" fill="#1e40af">インフラ（共通ユーティリティ）</text>
+    </svg>
+    <p class="diagram-caption">図1: 従来型レイヤードアーキテクチャ — UIはデータアクセスに間接的に依存してしまう</p>
+  </div>
+
+  <p>
+    この構造の最大の問題は、<strong>UIとビジネスロジックが、データアクセスに結合してしまう</strong>点です。
+    直接ではなくても、間接的な依存（推移的依存）は依然として依存です。
+  </p>
+  <p>
+    歴史的に見て、データアクセス技術は<strong>3年ごとに変化してきました</strong>。
+    長期運用するシステムでは、3年後にはデータアクセスの改修が必要になると考えてよいでしょう。
+    結合がきつければ改修が困難になり、システムが老朽化したまま放置されます。
+    これがレガシーシステムが生まれる根本原因の一つです。
+  </p>
+
+  <h3>オニオンアーキテクチャの基本構造</h3>
+  <p>
+    新しいアプローチを提案します。完全に新しいわけではありませんが、
+    <strong>名前のついたアーキテクチャパターン</strong>として定義します。
+    名前があることで、エンジニア同士が共通の語彙で議論できるようになります。
+  </p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif">
+      <ellipse cx="240" cy="240" rx="220" ry="220" fill="#ede9fe" stroke="#a78bfa" stroke-width="2"/>
+      <ellipse cx="240" cy="240" rx="168" ry="168" fill="#ddd6fe" stroke="#8b5cf6" stroke-width="2"/>
+      <ellipse cx="240" cy="240" rx="114" ry="114" fill="#c7d2fe" stroke="#6366f1" stroke-width="2"/>
+      <ellipse cx="240" cy="240" rx="64" ry="64" fill="#bfdbfe" stroke="#2563eb" stroke-width="2.5"/>
+      <text x="240" y="235" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">ドメイン</text>
+      <text x="240" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">モデル</text>
+      <text x="240" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">ドメインサービス</text>
+      <text x="240" y="163" text-anchor="middle" font-size="11" fill="#4338ca">リポジトリ I/F</text>
+      <text x="240" y="96" text-anchor="middle" font-size="12" font-weight="600" fill="#5b21b6">アプリケーションサービス</text>
+      <text x="240" y="44" text-anchor="middle" font-size="12" font-weight="600" fill="#6d28d9">UI ／ テスト ／ インフラ実装</text>
+      <defs>
+        <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#2563eb"/>
+        </marker>
+      </defs>
+      <line x1="388" y1="128" x2="318" y2="180" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowBlue)"/>
+      <text x="410" y="122" font-size="11" fill="#2563eb" font-weight="600">依存の方向</text>
+    </svg>
+    <p class="diagram-caption">図2: オニオンアーキテクチャ — 依存はすべて外側から中心（内側）へ向かう</p>
+  </div>
+
+  <p>
+    最も中心にあるのが<strong>ドメインモデル</strong>（その組織・業務の「状態」と「振る舞い」を表したオブジェクト群）です。
+    すべての依存が中心に向かうため、<strong>ドメインモデルは自分自身にしか依存しません。</strong>
+  </p>
+  <p>
+    ドメインモデルの外側には、オブジェクトの保存・取得の振る舞いを定義する<strong>リポジトリインターフェース</strong>があります。
+    「データをどうやって保存・取得するか」の約束だけを定義し、実際にどのDBを使うかは外側の層が担当します。
+    中心部はDBの存在を知りません。
+  </p>
+
+  <blockquote>
+    <p>
+      <strong>「DBは中心ではない、外部にあるものだ」</strong> — これはオニオンアーキテクチャの核心です。
+      従来の「DBアプリ」という発想を捨てる必要があります。
+      DBやファイルシステムからアプリを切り離すことで、<strong>長期的な保守コストが大幅に下がります。</strong>
+    </p>
+  </blockquote>
+
+  <p>
+    このアーキテクチャは<strong>依存性逆転の原則（DIP）</strong>に強く依拠しています。
+    「上位モジュールは下位モジュールに依存してはいけない。どちらも抽象（インターフェース）に依存すべき」という設計原則です。
+    アプリコアはインターフェースの実装を必要としますが、その実装クラスは外側の端に置かれます。
+    実行時に必要なクラスを注入するために<strong>IoCコンテナ</strong>（DIコンテナとも呼ばれる）を使います。
+  </p>
+  <p>
+    なお、Alistair Cockburn の<strong>ヘキサゴナルアーキテクチャ</strong>（ポート&amp;アダプター）も「インフラを外部化し、アダプターコードを書くことで密結合を防ぐ」という同じ前提を持ちます。
+  </p>
+
+  <!-- ===== PART 2 ===== -->
+  <h2 id="sec-2">Part 2 — 実践例：CodeCampServer</h2>
+  <p><em>公開日: 2008年7月30日</em></p>
+  <p>
+    実際のプロジェクト「CodeCampServer」を例に、オニオンアーキテクチャがどのように動くかを示します。
+    ASP.NET MVC を使用した実装例ですが、設計概念は言語非依存です。
+  </p>
+
+  <h3>登場クラスとその位置づけ</h3>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>クラス / インターフェース</th>
+          <th>どの層？</th>
+          <th>役割</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>SpeakerController</code></td>
+          <td>外側（UI層）</td>
+          <td>画面処理。フレームワークに依存</td>
+        </tr>
+        <tr>
+          <td><code>IConferenceRepository</code></td>
+          <td>内側（コア）</td>
+          <td>データ取得の「約束」だけ定義</td>
+        </tr>
+        <tr>
+          <td><code>IUserSession</code></td>
+          <td>内側（コア）</td>
+          <td>ユーザーセッションの「約束」</td>
+        </tr>
+        <tr>
+          <td><code>ConferenceRepository</code></td>
+          <td>外側（インフラ層）</td>
+          <td><code>IConferenceRepository</code> の実装。DB処理を持つ</td>
+        </tr>
+        <tr>
+          <td><code>UserSession</code></td>
+          <td>外側（インフラ層）</td>
+          <td><code>IUserSession</code> の実装</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><code>SpeakerController</code> はインターフェース（約束）だけに依存しています。どんなDBを使うかは一切知りません。</p>
+
+<pre><code class="language-csharp">// SpeakerControllerのコンストラクタ（初期化メソッド）
+public SpeakerController(
+    IConferenceRepository conferenceRepository,  // インターフェース（約束）を受け取る
+    IUserSession userSession,
+    IClock clock)
+{
+    _conferenceRepository = conferenceRepository;
+    _clock = clock;
+    _userSession = userSession;
+}</code></pre>
+
+  <blockquote>
+    <p>
+      <strong>実行時の仕組み（IoCコンテナ）：</strong>
+      アプリ起動時にIoCコンテナが「<code>IConferenceRepository</code> が必要なら <code>ConferenceRepository</code> を渡せ」という設定を読み込み、
+      自動的に実装クラスを注入します。<code>SpeakerController</code> は実装の詳細を一切知らなくて済みます。
+    </p>
+  </blockquote>
+
+  <p>
+    ルールの確認として、<code>SpeakerController</code> は同じ層にある <code>UserSession</code> を直接使えます（同層はOK）。
+    しかし<strong><code>ConferenceRepository</code> は使えません</strong>（外側のクラスを内側から参照することになるため）。
+    必ず外から <code>IConferenceRepository</code> として渡してもらう必要があります。
+  </p>
+
+  <!-- ===== PART 3 ===== -->
+  <h2 id="sec-3">Part 3 — 従来型との比較と4つの原則</h2>
+  <p><em>公開日: 2008年8月4日</em></p>
+  <p>
+    Part 3 の目的は、オニオンアーキテクチャと従来型レイヤードアーキテクチャを対比させることです。
+    なお、私は技術的なブレークスルーを主張しているわけではありません。
+    Martin Fowler、Kent Beck らに学んだことを統合し、<strong>コミュニケーションのための名前を付けた</strong>ものです。
+  </p>
+
+  <h3>インフラの扱い方が根本的に違う</h3>
+  <p>
+    <strong>インフラ</strong>とは「汎用的で、アプリに競争優位をもたらさないコード」（データアクセス、ファイルI/O、外部WebAPIなど）のことです。
+    <strong>このコードは変化しやすい</strong>のに、従来型ではビジネスロジックがインフラに直接結合してしまいます。
+  </p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>観点</th>
+          <th>従来型レイヤード</th>
+          <th>オニオン</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>インフラの位置</td>
+          <td>ビジネスロジックの下に積み重なる</td>
+          <td>外側の端に追いやられる</td>
+        </tr>
+        <tr>
+          <td>ビジネスロジックとDBの結合</td>
+          <td>直接依存（結合強）</td>
+          <td>インターフェース越しのみ（結合弱）</td>
+        </tr>
+        <tr>
+          <td>層をまたいだ呼び出し</td>
+          <td>直下の層にしか呼べない</td>
+          <td>どの内側の層でも直接呼べる</td>
+        </tr>
+        <tr>
+          <td>テストコードの位置</td>
+          <td>定義が曖昧</td>
+          <td>外側の端（コアに依存しない）</td>
+        </tr>
+        <tr>
+          <td>DBなしでのコンパイル</td>
+          <td>困難</td>
+          <td>可能（コアはDBを知らない）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    「外側の層はどの内側の層でも直接呼べる」 — これがオニオンの重要な特徴です。
+    従来型は「UIはビジネスロジックのみ呼べる。ビジネスロジックはDAのみ呼べる」という制約がありました。
+    オニオンはそれを廃止し、<strong>依存の方向さえ守れば内側なら何でも呼べます。</strong>
+    これにより不要な中継メソッドが減ります。
+  </p>
+
+  <h3>オニオンアーキテクチャの4つの原則</h3>
+  <p>Part 3 の最後に、Palermo は4原則を明文化しました。これがオニオンアーキテクチャの定義です。</p>
+  <ul>
+    <li>
+      <strong>原則1：アプリは独立したオブジェクトモデルを中心に構築する</strong><br>
+      ドメインモデルはDBにもフレームワークにも依存しない。業務の概念をそのままコードで表現したものが中心にいる。
+    </li>
+    <li>
+      <strong>原則2：内側の層がインターフェースを定義し、外側の層が実装する</strong><br>
+      「何をするか」の約束はコアが持ち、「どうやってするか」の実装は外側が担う。内側は外側の実装を知らない。
+    </li>
+    <li>
+      <strong>原則3：依存の方向は必ず中心に向かう</strong><br>
+      外側から内側への依存はOK。内側から外側への依存は絶対NG。これが崩れるとオニオンではなくなる。
+    </li>
+    <li>
+      <strong>原則4：アプリコアはインフラなしでコンパイル・実行できる</strong><br>
+      DBが繋がらなくてもビジネスロジックのテストができる。コアが本当に独立していることの証明になる。
+    </li>
+  </ul>
+
+  <blockquote>
+    <p>
+      <strong>IoCコンテナは必須ではありません。</strong>
+      4原則にIoCコンテナは含まれていません。C# や Java なら便利ですが、言語によってはDI機能が組み込まれています。
+      オニオンアーキテクチャはIoCなしでも成立します。
+    </p>
+  </blockquote>
+
+  <p>この構造により、以下が変わってもアプリコアは変更不要になります。</p>
+  <ul>
+    <li>UIの変更</li>
+    <li>データアクセス技術の変更</li>
+    <li>Webサービス・メッセージング基盤の変更</li>
+    <li>I/O技術の変更</li>
+  </ul>
+
+  <!-- ===== PART 4 ===== -->
+  <h2 id="sec-4">Part 4 — 4年後の振り返り</h2>
+  <p><em>公開日: 2013年8月19日</em></p>
+  <p>
+    2008年に「オニオンアーキテクチャ」という名前を作ってから4年が経ちました。
+    ユーザーグループや各種カンファレンスで講演し、Manning社の書籍「ASP.NET MVC in Action」の一章にも掲載されました。
+    このパターンが広く受け入れられたことに驚いています。
+  </p>
+
+  <h3>よく聞かれる質問への回答</h3>
+  <p><strong>「DDDと組み合わせないといけないの？」</strong></p>
+  <p>
+    <strong>DDD（ドメイン駆動設計）</strong>（Eric Evansが提唱した、業務の概念をそのままコードに落とし込む設計手法）がなくてもオニオンアーキテクチャは機能します。
+    <strong>CQRS</strong>（書き込み処理と読み込み処理を別々のモデルで扱う手法）とも、フォーム中心の設計とも、DDDとも相性が良い。
+    オニオンはあくまで<strong>「コアオブジェクトモデルが不安定なコードに依存しない」という構造のパターン</strong>です。
+  </p>
+
+  <h3>4年経っても変わらない4つの原則</h3>
+  <ul>
+    <li>アプリは独立したオブジェクトモデルを中心に構築する</li>
+    <li>内側の層がインターフェースを定義し、外側の層が実装する</li>
+    <li>依存の方向は必ず中心に向かう</li>
+    <li>アプリコアのコードはインフラなしでコンパイル・実行できる</li>
+  </ul>
+
+  <p>
+    多くの方から「さまざまな環境での実装方法」を聞かれました。
+    そこで、よりシンプルなサンプルコードを公開しています。UIの入力フォームやIoCコンテナをあえて外しており、
+    <strong>オニオンアーキテクチャの本質だけを伝えること</strong>を目指しています。
+  </p>
+  <p>
+    GitHubに有志がフォークしたサンプルが残っています：
+    <a href="https://github.com/Jordiag/Jeffrey-Palermo-Onion-Architecture" target="_blank" rel="noopener">github.com/Jordiag/Jeffrey-Palermo-Onion-Architecture</a>
+  </p>
+  <p>
+    また、同様の思想を持つアーキテクチャとして、Alistair Cockburn による Hexagonal Architecture（ポート&amp;アダプター）があります。
+    オニオンはそれをベースにしながら、内部の層を明示的に整理したものです。
+    後の Robert C. Martin のクリーンアーキテクチャもこれらの延長線上にあります。
+  </p>
+
+  <!-- ===== まとめ ===== -->
+  <h2 id="sec-5">全4記事のエッセンス</h2>
+
+  <h3>依存関係の流れ（正しい方向）</h3>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 640 80" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif">
+      <defs>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#2563eb"/>
+        </marker>
+      </defs>
+      <rect x="4" y="14" width="130" height="48" rx="8" fill="#ede9fe" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="69" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#5b21b6">UI /</text>
+      <text x="69" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="#5b21b6">DB実装</text>
+      <line x1="134" y1="38" x2="158" y2="38" stroke="#2563eb" stroke-width="2" marker-end="url(#arr2)"/>
+      <rect x="162" y="14" width="140" height="48" rx="8" fill="#ddd6fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="232" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">アプリケーション</text>
+      <text x="232" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="#4c1d95">サービス</text>
+      <line x1="302" y1="38" x2="326" y2="38" stroke="#2563eb" stroke-width="2" marker-end="url(#arr2)"/>
+      <rect x="330" y="14" width="140" height="48" rx="8" fill="#c7d2fe" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="400" y="34" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">ドメインサービス</text>
+      <text x="400" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">（I/F定義）</text>
+      <line x1="470" y1="38" x2="494" y2="38" stroke="#2563eb" stroke-width="2" marker-end="url(#arr2)"/>
+      <rect x="498" y="14" width="138" height="48" rx="8" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/>
+      <text x="567" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">ドメイン</text>
+      <text x="567" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">モデル</text>
+    </svg>
+    <p class="diagram-caption">図3: 依存の向きは必ず中心（右）に向かう。逆方向はない。</p>
+  </div>
+
+  <h3>覚えておくべき3つのポイント</h3>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ポイント</th>
+          <th>意味</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>DBは外側にある</strong></td>
+          <td>DBはアプリの中心ではなく、交換可能な外部ストレージ。インターフェース越しにのみ接触する。</td>
+        </tr>
+        <tr>
+          <td><strong>約束は内側、実装は外側</strong></td>
+          <td>インターフェース（何をするか）はコアが持つ。具体的な処理（どうやるか）は外側が書く。</td>
+        </tr>
+        <tr>
+          <td><strong>依存は中心方向のみ</strong></td>
+          <td>外→内はOK。内→外は絶対NG。これだけ守ればオニオンの骨格は成立する。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <p>
+    原典リンク：
+    <a href="https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/" target="_blank" rel="noopener">Part 1</a> ·
+    <a href="https://jeffreypalermo.com/2008/07/the-onion-architecture-part-2/" target="_blank" rel="noopener">Part 2</a> ·
+    <a href="https://jeffreypalermo.com/2008/08/the-onion-architecture-part-3/" target="_blank" rel="noopener">Part 3</a> ·
+    <a href="https://jeffreypalermo.com/2013/08/onion-architecture-part-4-after-four-years/" target="_blank" rel="noopener">Part 4</a>
+  </p>
+
+  <footer class="article-footer">
+    Written with Claude · 2026年6月18日
+  </footer>
+</article>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
