@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ドメイン駆動設計（DDD）入門</title>
+  <meta name="description" content="DDDの中核概念であるユビキタス言語・境界づけられたコンテキスト・エンティティ・値オブジェクト・集約をコード例とともに解説します。">
+  <meta name="date" content="2026-06-18">
+  <meta property="og:title" content="ドメイン駆動設計（DDD）入門">
+  <meta property="og:description" content="DDDの中核概念であるユビキタス言語・境界づけられたコンテキスト・エンティティ・値オブジェクト・集約をコード例とともに解説します。">
+  <meta property="og:type" content="article">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text: #1a1a2e;
+      --text-secondary: #6c757d;
+      --accent: #4a6fa5;
+      --border: #e9ecef;
+      --code-bg: #f3f4f6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --bg-secondary: #161b22;
+        --text: #e6edf3;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+        --border: #30363d;
+        --code-bg: #1e2329;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+
+    header a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    article {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .article-header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .meta {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 1rem; }
+
+    ul, ol {
+      margin: 0 0 1rem 1.5rem;
+    }
+
+    li { margin-bottom: 0.3rem; }
+
+    code {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.875em;
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.875rem;
+    }
+
+    blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/claude_blogs/">← 記事一覧</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <article>
+        <div class="article-header">
+          <h1>ドメイン駆動設計（DDD）入門</h1>
+          <p class="meta">2026-06-18</p>
+        </div>
+
+        <h2>DDDとは何か</h2>
+        <p>ドメイン駆動設計（Domain-Driven Design、DDD）は、Eric Evans が2003年に著書『Domain-Driven Design: Tackling Complexity in the Heart of Software』で提唱した設計手法です。</p>
+        <p>中心的な考え方は <strong>「ソフトウェアの核心はドメイン（業務領域）の複雑さに対処することにある」</strong> という点です。技術的な実装よりも、解決すべき問題領域をモデル化することを最優先に置きます。</p>
+
+        <h2>ユビキタス言語</h2>
+        <p>DDDで最も重要な実践のひとつが <strong>ユビキタス言語（Ubiquitous Language）</strong> です。開発者とドメインエキスパート（業務担当者）が同じ言葉でコミュニケーションし、その言葉をそのままコードに反映させます。</p>
+
+        <blockquote>
+          <p>「翻訳」のコストをなくす。業務用語がそのままクラス名・メソッド名になる。</p>
+        </blockquote>
+
+        <p>例えば、EC サイト開発において「注文を確定する」という業務用語があれば、コード上も <code>order.confirm()</code> とすべきであり、<code>order.setStatus("CONFIRMED")</code> のような技術的表現は避けます。</p>
+
+        <h2>境界づけられたコンテキスト</h2>
+        <p><strong>境界づけられたコンテキスト（Bounded Context）</strong> は、特定のドメインモデルが有効な範囲を明示的に定義した境界です。</p>
+        <p>同じ「顧客」という概念でも、販売コンテキストでは「購買履歴・与信情報」が重要であり、配送コンテキストでは「住所・連絡先」が中心になります。これらを無理に統合せず、コンテキストごとに独立したモデルを持たせます。</p>
+
+        <pre><code># 販売コンテキストの顧客
+class Customer:
+    def __init__(self, id: CustomerId, credit_limit: Money):
+        self.id = id
+        self.credit_limit = credit_limit
+
+# 配送コンテキストの顧客（別モデル）
+class ShippingRecipient:
+    def __init__(self, id: RecipientId, address: Address):
+        self.id = id
+        self.address = address</code></pre>
+
+        <h2>エンティティと値オブジェクト</h2>
+
+        <h3>エンティティ（Entity）</h3>
+        <p>エンティティは <strong>同一性（Identity）</strong> によって識別されるオブジェクトです。属性が変化しても、IDが同じであれば同一のオブジェクトとみなします。</p>
+
+        <pre><code>class Order:
+    def __init__(self, order_id: OrderId, customer_id: CustomerId):
+        self.order_id = order_id      # 同一性の根拠
+        self.customer_id = customer_id
+        self.items: list[OrderItem] = []
+        self.status = OrderStatus.DRAFT
+
+    def __eq__(self, other):
+        if not isinstance(other, Order):
+            return False
+        return self.order_id == other.order_id  # IDで比較</code></pre>
+
+        <h3>値オブジェクト（Value Object）</h3>
+        <p>値オブジェクトは <strong>属性の値</strong> によって同一性を判断するオブジェクトです。不変（イミュータブル）であり、同じ値を持つ2つのオブジェクトは等価とみなします。</p>
+
+        <pre><code>from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Money:
+    amount: int
+    currency: str
+
+    def add(self, other: "Money") -> "Money":
+        if self.currency != other.currency:
+            raise ValueError("通貨が一致しません")
+        return Money(self.amount + other.amount, self.currency)
+
+# 使用例
+price1 = Money(1000, "JPY")
+price2 = Money(1000, "JPY")
+print(price1 == price2)  # True — 値で比較</code></pre>
+
+        <h2>集約（Aggregate）</h2>
+        <p>集約は、関連するエンティティと値オブジェクトをひとつの整合性境界としてまとめたものです。集約の外部からは <strong>集約ルート（Aggregate Root）</strong> を通じてのみ操作します。</p>
+
+        <pre><code>class Order:  # 集約ルート
+    def add_item(self, product_id: ProductId, quantity: int, unit_price: Money):
+        # 集約内のビジネスルールをここで守る
+        if self.status != OrderStatus.DRAFT:
+            raise DomainError("確定済みの注文には商品を追加できません")
+        item = OrderItem(product_id, quantity, unit_price)
+        self.items.append(item)
+
+    def confirm(self):
+        if not self.items:
+            raise DomainError("商品が1つもない注文は確定できません")
+        self.status = OrderStatus.CONFIRMED</code></pre>
+
+        <p>外部から <code>OrderItem</code> を直接操作することは許可されません。<code>Order</code> 経由でのみ変更を行うことで、集約全体の整合性が保証されます。</p>
+
+        <h2>ドメインサービスとリポジトリ</h2>
+
+        <h3>ドメインサービス</h3>
+        <p>特定のエンティティや値オブジェクトに自然に属さないビジネスロジックは <strong>ドメインサービス</strong> として切り出します。</p>
+
+        <pre><code>class PricingService:
+    def calculate_total(self, order: Order, tax_rate: float) -> Money:
+        subtotal = sum(
+            item.unit_price.amount * item.quantity
+            for item in order.items
+        )
+        tax = int(subtotal * tax_rate)
+        return Money(subtotal + tax, "JPY")</code></pre>
+
+        <h3>リポジトリ（Repository）</h3>
+        <p>リポジトリは集約の永続化と取得を担います。ドメイン層はリポジトリのインターフェースのみを知り、DBの実装詳細には依存しません。</p>
+
+        <pre><code>from abc import ABC, abstractmethod
+
+class OrderRepository(ABC):  # ドメイン層で定義
+    @abstractmethod
+    def find_by_id(self, order_id: OrderId) -> Order | None: ...
+
+    @abstractmethod
+    def save(self, order: Order) -> None: ...
+
+# インフラ層で実装
+class SqlOrderRepository(OrderRepository):
+    def find_by_id(self, order_id: OrderId) -> Order | None:
+        row = self._db.query("SELECT * FROM orders WHERE id = ?", order_id.value)
+        return self._to_entity(row) if row else None
+
+    def save(self, order: Order) -> None:
+        self._db.upsert("orders", self._to_record(order))</code></pre>
+
+        <h2>戦略的設計と戦術的設計</h2>
+        <p>DDDは2つのレベルに分かれます：</p>
+        <ul>
+          <li><strong>戦略的設計</strong>：境界づけられたコンテキストの識別、コンテキストマップによるシステム全体の構造設計</li>
+          <li><strong>戦術的設計</strong>：エンティティ・値オブジェクト・集約・ドメインサービス・リポジトリといった実装パターンの適用</li>
+        </ul>
+        <p>小規模プロジェクトではまず戦略的設計からコンテキストを正しく切ることが、後々の複雑さを最も効果的に抑えます。</p>
+
+        <h2>DDDを導入すべきか</h2>
+        <p>DDDはすべてのプロジェクトに適しているわけではありません。効果が高い条件は以下のとおりです：</p>
+        <ul>
+          <li>業務ルールが複雑で頻繁に変化する</li>
+          <li>ドメインエキスパートと継続的に協働できる体制がある</li>
+          <li>長期間にわたって保守するプロダクトである</li>
+        </ul>
+        <p>CRUD中心の単純なシステムや、短期プロトタイプには過剰設計になりがちです。チームの習熟度とプロダクトの複雑さを秤にかけて判断しましょう。</p>
+      </article>
+    </div>
+  </main>
+</body>
+</html>
