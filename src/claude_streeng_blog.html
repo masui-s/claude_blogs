@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="date" content="2026-06-22">
+    <meta property="og:title" content="Claude Code を操る">
+    <meta property="og:description" content="スキル、フック、ルール、サブエージェントほか">
+    <meta property="og:type" content="article">
+    <title>Claude Code を操る：スキル、フック、ルール、サブエージェントほか</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --surface: #161616;
+            --surface2: #1e1e1e;
+            --border: #2a2a2a;
+            --accent: #d97757;
+            --accent2: #e8a87c;
+            --text: #e8e4de;
+            --text-muted: #8a8480;
+            --text-dim: #5a5652;
+            --code-bg: #1a1a1a;
+            --tag-bg: #2a1f1a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        /* ── ヘッダー ── */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: rgba(15, 15, 15, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .header-tag {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.7rem;
+            border-radius: 99px;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── レイアウト ── */
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* ── ヒーロー ── */
+        .hero {
+            padding: 3.5rem 0 2.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            background: var(--tag-bg);
+            border: 1px solid rgba(217, 119, 87, 0.3);
+            padding: 0.25rem 0.7rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .date {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .read-time {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+        }
+
+        h1 {
+            font-size: clamp(1.7rem, 4vw, 2.4rem);
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 1.2rem;
+        }
+
+        .hero-lead {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            line-height: 1.75;
+            max-width: 640px;
+        }
+
+        /* ── 本文 ── */
+        article {
+            padding-bottom: 5rem;
+        }
+
+        p {
+            margin-bottom: 1.4rem;
+            color: #c8c4be;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--text);
+            margin: 3rem 0 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 2.2rem 0 0.8rem;
+        }
+
+        h3::before {
+            content: '§ ';
+            color: var(--accent);
+            font-weight: 400;
+        }
+
+        a {
+            color: var(--accent2);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(232, 168, 124, 0.3);
+            transition: border-color 0.15s;
+        }
+
+        a:hover {
+            border-color: var(--accent2);
+        }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            padding: 0.15em 0.45em;
+            border-radius: 4px;
+            color: #f0b98a;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 1.2rem 1.4rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85rem;
+            color: #d4c9b8;
+        }
+
+        /* ── ヒントボックス ── */
+        .tip {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 1rem 1.2rem;
+            margin: 1.4rem 0;
+            font-size: 0.93rem;
+        }
+
+        .tip strong {
+            color: var(--accent);
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .tip p {
+            margin: 0;
+            color: #b0aca6;
+        }
+
+        /* ── 比較表 ── */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 2rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            min-width: 700px;
+        }
+
+        thead {
+            background: var(--surface2);
+        }
+
+        thead th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: var(--surface2);
+        }
+
+        td {
+            padding: 0.7rem 1rem;
+            color: #b0aca6;
+            vertical-align: top;
+        }
+
+        td:first-child {
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        /* ── メソッドカード ── */
+        .method-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-family: 'SF Mono', monospace;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.04em;
+        }
+
+        /* ── クイックリスト ── */
+        .check-list {
+            list-style: none;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .check-list li {
+            padding: 0.4rem 0 0.4rem 1.8rem;
+            position: relative;
+            color: #b0aca6;
+            font-size: 0.95rem;
+        }
+
+        .check-list li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        /* ── ライフサイクル図 ── */
+        .lifecycle {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+
+        .lc-item {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            font-size: 0.82rem;
+        }
+
+        .lc-item .lc-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-dim);
+            margin-bottom: 0.3rem;
+        }
+
+        .lc-item .lc-val {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        /* ── フッター ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--text-muted);
+            border-bottom-color: transparent;
+        }
+
+        /* ── スクロールバー ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 0 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            .hero {
+                padding: 2rem 0 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="/claude_blogs/">← 記事一覧</a>
+        <span class="header-tag">Claude Code</span>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <div class="hero-meta">
+                <span class="tag">コーディング</span>
+                <span class="date">2026年6月18日</span>
+                <span class="read-time">約5分</span>
+            </div>
+            <h1>Claude Code を操る：スキル、フック、ルール、サブエージェントほか</h1>
+            <p class="hero-lead">
+                Claude の動作を指示する7つの方法を学び、それぞれのコンテキストコストと権限を理解しましょう。
+            </p>
+        </div>
+
+        <article>
+
+            <p>
+                Claude はあなたの作業スタイルに合わせて動作するよう設計されており、Claude Code ではその動作をカスタマイズできます。
+            </p>
+
+            <p>
+                Claude の動作を指示する方法は7つあります：<strong>CLAUDE.md ファイル</strong>、<strong>ルール</strong>、<a
+                    href="https://code.claude.com/docs/en/skills">スキル</a>、<a
+                    href="https://code.claude.com/docs/en/sub-agents">サブエージェント</a>、<a
+                    href="https://code.claude.com/docs/en/hooks-guide">フック</a>、<strong>出力スタイル</strong>、そして<strong>システムプロンプトへの追記</strong>です。
+            </p>
+
+            <p>各方法は以下の3点を制御します：</p>
+            <ul class="check-list">
+                <li>指示がコンテキストにロードされるタイミング</li>
+                <li>長いセッションを通じて保持されるかどうか（コンパクション動作）</li>
+                <li>どれだけの権限を持つか</li>
+            </ul>
+
+            <p>
+                下表は各方法の主な違いをまとめたものです。各方法の詳細と、どの指示をどこに置くべきかの判断フレームワークについては後述します。
+            </p>
+
+            <h2>各方法の比較一覧</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>方法</th>
+                            <th>ロードタイミング</th>
+                            <th>コンパクション動作</th>
+                            <th>コンテキストコスト</th>
+                            <th>使いどころ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CLAUDE.md（ルート）</td>
+                            <td>セッション開始時；セッション全体を通じてコンテキストに保持</td>
+                            <td>メモ化。一度読み込んでセッション中にキャッシュ；コンパクション後にキャッシュをクリアして再読み込み</td>
+                            <td>高。関連性に関わらず、すべての行がトークンを消費</td>
+                            <td>ビルドコマンド、ディレクトリ構成、モノレポ構造、コーディング規約、チームの規範</td>
+                        </tr>
+                        <tr>
+                            <td>CLAUDE.md（サブディレクトリ）</td>
+                            <td>Claude がそのサブディレクトリ下のファイルを読んだときに必要に応じてロード</td>
+                            <td>そのサブディレクトリが再度触れられるまで消失</td>
+                            <td>低。関連するサブディレクトリで作業しているときのみコンテキストを消費</td>
+                            <td>特定のサブディレクトリに固有の規約</td>
+                        </tr>
+                        <tr>
+                            <td>ルール</td>
+                            <td>セッション開始時（ユーザーレベルのルール）、またはマッチするファイルが触れられたときのみ（パススコープ）</td>
+                            <td>コンパクション時に再注入</td>
+                            <td>中。パススコープでない場合は常時オン</td>
+                            <td>特定の制約や規約（例：すべての APIハンドラーは Zod で入力検証すること）</td>
+                        </tr>
+                        <tr>
+                            <td>スキル</td>
+                            <td>セッション開始時に名前と説明のみ；スキル呼び出し時に本文全体をロード</td>
+                            <td>呼び出されたスキルは共有バジェット内で再注入；古いものから順に削除</td>
+                            <td>低。本文は呼び出し時のみロード；呼び出し済みスキル間でトークンバジェットを共有</td>
+                            <td>手順的なワークフロー（デプロイ・リリースチェックリストなど）</td>
+                        </tr>
+                        <tr>
+                            <td>サブエージェント</td>
+                            <td>セッション開始時に名前・説明・ツールリストのみ；Agent ツール経由で呼び出されたときに本文をロード</td>
+                            <td>最終メッセージ（サマリー＋メタデータ）のみがメインセッションに返却</td>
+                            <td>低。呼び出されるまでメインコンテキストのコストはゼロ；独自の隔離されたコンテキストウィンドウで実行</td>
+                            <td>並行実行や、隔離して実行しサマリーのみを返すべきサイドタスク（詳細検索、ログ解析、依存関係監査など）</td>
+                        </tr>
+                        <tr>
+                            <td>フック</td>
+                            <td>ライフサイクルイベント時に発火</td>
+                            <td>コンパクションを完全にバイパス</td>
+                            <td>低。設定はメインコンテキスト外に存在；一部の出力が返却される場合あり（ブロックエラーなど）</td>
+                            <td>確定的な自動化：リンター実行、完了時のSlack投稿、コマンドのブロック、PreCompact時のチャット履歴バックアップ</td>
+                        </tr>
+                        <tr>
+                            <td>出力スタイル</td>
+                            <td>セッション開始時；システムプロンプトに注入</td>
+                            <td>コンパクションされない</td>
+                            <td>高。コンテキストウィンドウを占有するが、デフォルトのシステムプロンプトを上書き</td>
+                            <td>大幅なロール変更（コードアシスタントから汎用アシスタントへなど）</td>
+                        </tr>
+                        <tr>
+                            <td>システムプロンプトへの追記</td>
+                            <td>セッション開始時；CLI フラグとして渡される</td>
+                            <td>コンパクションされない；その呼び出しにのみ適用</td>
+                            <td>中。セッション内の最初のリクエスト以降はプロンプトキャッシュで削減</td>
+                            <td>トーン、レスポンス長、フォーマットの好み</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>指示を届ける7つの方法</h2>
+
+            <h3>CLAUDE.md ファイル</h3>
+
+            <p>
+                CLAUDE.md はプロジェクトのルートに置くマークダウンファイルです。セッション開始時にコンテキストにロードされ、セッション全体を通じて保持されます。
+            </p>
+            <p>
+                ビルドコマンド、ディレクトリ構成、モノレポ構造、コーディング規約、チームの規範はここに自然にフィットします。
+            </p>
+
+            <p>ロードのされ方によって2種類あります：</p>
+            <ul class="check-list">
+                <li><strong>常時ロード</strong>：ルート CLAUDE.md
+                    ファイル（共有リポジトリ内、またはプロジェクト固有の個人設定としてローカルに保存）。これらはセッション開始時にすべてロードされ、長いセッションでも失われたり劣化したりしません。Claude Code
+                    が会話をコンパクトにするとき、これらのファイルを再読み込みします。</li>
+                <li><strong>オンデマンド</strong>：セッションを開始したフォルダより下のサブディレクトリにある CLAUDE.md ファイル。例えば
+                    <code>app/api/CLAUDE.md</code> は、Claude が <code>app/api</code>
+                    下のファイルを読んだときにロードされ、セッション開始時ではありません。パススコープのルールと同じコンパクション動作を取り、そのサブディレクトリが再度触れられるまで消失します。
+                </li>
+            </ul>
+
+            <p>
+                共有リポジトリでは CLAUDE.md が所有者不在の設定ファイルのように肥大化しがちです。各チームが自分の指示を追加し、何も削除されません。そのコストはスケールすると増大します。
+            </p>
+            <p>
+                リポジトリで作業するすべてのエンジニアのすべてのセッションに、タスクとの関連性に関わらずすべての行がロードされ、トークンを消費し、本当に重要な指示への遵守を希薄化させます。ファイルが肥大化してきたら、チーム固有の規約はパススコープのルールに、手順はスキルに移して、関連するときのみロードされるようにしましょう。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>CLAUDE.md は200行以内に収め、オーナーを設けて、コードのようにレビューしましょう。このファイルは Claude
+                    にコードベースの概要を伝えるもの、または必要に応じてより詳細な情報を見つけられる他のファイルへのインデックスとして考えましょう。</p>
+            </div>
+
+            <p>
+                モノレポでは各チームのディレクトリに独自のサブディレクトリ CLAUDE.md を持たせることで、チームは自分たちの規約のみをロードできます。また開発者は
+                <code>claudeMdExcludes</code> 設定を使って、決して触れないチームのファイルをスキップできます。
+            </p>
+            <p>
+                セキュリティポリシーやコンプライアンス要件など、組織内のすべてのリポジトリに適用される基準は、MDM や設定管理ツールを通じて開発者のマシンにデプロイできる中央管理の CLAUDE.md
+                に配置でき、個人の設定では除外できません。
+            </p>
+
+            <h3>ルール</h3>
+
+            <p>
+                <a href="https://code.claude.com/docs/en/memory#organize-rules-with-claude/rules/">ルール</a>は
+                <code>.claude/rules/</code> 内のマークダウンファイルで、Claude に特定の制約や規約を与えます。
+            </p>
+            <p>
+                スコープなしのルールは CLAUDE.md
+                と同様に、セッション開始時に常時ロードされ、コンパクション時に再注入されます。これにより、手元のタスクに関連しない場合でもコンテキストがロードされ、トークンを無駄にする可能性があります。
+            </p>
+            <p>
+                パススコープのルールを使うと、<code>paths</code> フィールドを追加して関連するときのみ命令がロードされるようにできます。
+            </p>
+            <p>
+                例えば、<code>src/api/**</code> にスコープされたルールは、ドキュメントのみのセッション中はコンテキスト外にとどまります。<code>src/api/</code>
+                ディレクトリ内のファイルを Claude が読んだときにのみロードされます。
+            </p>
+
+            <pre><code>---
+paths:
+  - "src/api/**"
+  - "**/*.handler.ts"
+---
+すべての API ハンドラーは処理前に Zod で入力を検証しなければなりません。</code></pre>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>「マイグレーションは追記のみ」のようなファイル固有の制約は、<code>paths:</code>
+                    のフロントマターに置いた<strong>ルール</strong>として最も適しています。コードベースの複数の（ただしすべてではない）場所に現れる横断的な関心事や、ネストされた CLAUDE.md
+                    ファイルでは適切でないファイルに指示が関係する場合は、パススコープのルールを選びましょう。</p>
+            </div>
+
+            <h3>スキル</h3>
+
+            <p>
+                <a href="https://code.claude.com/docs/en/skills">スキル</a>は <code>.claude/skills/</code>
+                に、命令・スクリプト・リソースのフォルダとして置かれ、Claude が動的にロードします。各スキルには名前・説明・本文を持つ <code>SKILL.md</code> ファイルがあります。
+            </p>
+            <p>
+                セッション開始時には名前と説明のみがロードされ、スラッシュコマンド（<code>/code-review</code>）またはタスクの自動マッチングでスキルが呼び出されたときに、本文全体がロードされます。
+            </p>
+            <p>
+                例えば、<code>/code-review</code> は組み込みスキルで、現在の差分をレビューし、ファイルを編集せずに結果を報告します。スキルがプレイブックを定義するため、Claude
+                は呼び出すたびに同じ構造化されたアプローチに従います。
+            </p>
+            <p>
+                コンパクション時、Claude Code は呼び出されたスキルをすべての呼び出し済みスキル間の合計バジェット内で再注入します。セッション中に多くのスキルを呼び出した場合、最も古いものから順に削除されます。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>デプロイワークフロー、リリースチェックリスト、レビュープロセスのような<strong>手順的な</strong>指示は、CLAUDE.md ではなくスキルに置きましょう。</p>
+            </div>
+
+            <h3>サブエージェント</h3>
+
+            <p>
+                <a href="https://code.claude.com/docs/en/sub-agents">サブエージェント</a>は <code>.claude/agents/</code>
+                内のマークダウンファイルで、特定のサイドタスク用の隔離されたアシスタントを定義します。各ファイルは YAML
+                フロントマター（名前・説明・オプションのモデルとツールアクセスのフィールド）と、そのサブエージェントのシステムプロンプトになる本文で構成されます。
+            </p>
+            <p>
+                サブエージェントはスキルと似ており、セッション開始時に名前・説明・ツールリストがロードされますが、エージェントの本文内の大きなコンテキストは自動呼び出しされません。Claude は Agent
+                ツールを通じてプロンプト文字列を渡して呼び出します。
+            </p>
+            <p>
+                サブエージェントの本文内の大きな命令コンテキストが自動呼び出しされないだけでなく、親会話には一切入りません。
+            </p>
+            <p>
+                サブエージェントはその独自の新鮮なコンテキストウィンドウで実行され、メインセッションに返却されるのは、サブエージェントの最終メッセージ（多くの場合、多くのサブタスクの集約結果）とメタデータのみです。
+            </p>
+            <p>
+                このパターンはスケールします：サブエージェントは最大5レベルまでネストでき、<a
+                    href="https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code">ダイナミックワークフロー</a>は、サブエージェントアーキテクチャの各詳細を指定することなく、数十から数百のバックグラウンドエージェントをオーケストレーションします。オーケストレーション計画と中間結果は
+                Claude のコンテキストウィンドウではなくスクリプト変数に保存されるため、命令の忠実度を失わずにスケールできます。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>その隔離性がスキルではなくサブエージェントを選ぶ主な理由の一つです。詳細検索、ログ解析パス、依存関係監査のようなサイドタスクが、二度と参照しない中間結果でメイン会話を散らかすような場合は、サブエージェントを使いましょう。各ステップを見て操縦できるようにメインスレッドで手順を実行したい場合はスキルを使いましょう。
+                </p>
+            </div>
+
+            <h3>フック</h3>
+
+            <p>
+                <a href="https://code.claude.com/docs/en/hooks-guide">フック</a>はユーザー定義のコマンド・HTTP エンドポイント・LLM
+                プロンプトで、ファイル編集・ツール呼び出し・セッション開始など、<a href="https://code.claude.com/docs/en/hooks#hook-lifecycle">Claude
+                    のライフサイクルの特定のイベント</a>で発火することで、Claude の動作をより確定的に制御します。
+            </p>
+            <p>
+                フックは <code>settings.json</code>・管理ポリシー設定・スキル/エージェントのフロントマターに登録します。
+            </p>
+            <p>
+                フックにはいくつかの種類があります：command、HTTP、mcp_tool、prompt、agent です。最初の3つは確定的に実行され、prompt と agent はルールの集合ではなく Claude
+                の判断を使って出力を決定します。
+            </p>
+            <p>
+                フックの設定や命令はメインコンテキストウィンドウの外に存在するため、コンテキストコストは低くなります。ハーネスはフックの種類に応じてハンドラー（command、http、mcp_tool）を実行するか、別のウィンドウでモデル呼び出しを行います（prompt、agent）。
+            </p>
+            <p>
+                一部のフックは出力がメインコンテキストウィンドウに保存される場合があります。例えば、ブロッキングフックの標準エラー出力は、なぜその呼び出しが拒否されたかを Claude
+                が知るためにコンテキスト内に保存されます。
+            </p>
+            <p>
+                しかし、設定が明示的に返却しない限り、ほとんどのフックはメインウィンドウに出力を保存しません。<code>PreCompact</code>
+                イベントを使ってコンパクション前にチャット履歴を別ファイルにバックアップした場合、Claude はどのファイルにチャット履歴が保存されたかを知りません。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>確定的に実行されるべきことすべてにフックを使いましょう：編集後のリンター実行、完了時の Slack 投稿、コマンドの事前ブロックなど。<code>PreToolUse</code>
+                    フックは任意のツール呼び出しを検査し、終了コード 2 で拒否できます。コンテキストにロードされる命令ではなく、ハーネスが実行するコードであるため、コンテキストコストが低くなります。</p>
+            </div>
+
+            <h3>出力スタイル</h3>
+
+            <p>
+                <a href="https://code.claude.com/docs/en/output-styles">出力スタイル</a>は <code>.claude/output-styles/</code>
+                内のファイルで、システムプロンプトに命令を注入します。コンパクションされず、すべてのセッション開始時にロードされ、セッション内の最初のリクエスト後にキャッシュされるため、コンテキストコストは中程度です。
+            </p>
+            <p>
+                システムプロンプトに置かれるため、出力スタイルはこれまで紹介した方法の中で最も高い命令遵守の重みを持ち、慎重に使う必要があります。
+            </p>
+            <p>
+                <strong>出力スタイルへの変更はデフォルトの出力スタイルを置き換えます</strong>（スタイルのフロントマターで
+                <code>keep-coding-instructions: true</code> を設定しない限り）。
+            </p>
+
+            <p>Claude Code では、これによって Claude がソフトウェアエンジニアリングタスクを支援していることを伝え、以下のような重要なデフォルト命令を含む指示が削除されます：</p>
+            <ul class="check-list">
+                <li>変更のスコープの限定方法</li>
+                <li>コードコメントを追加または省略するタイミング</li>
+                <li>セキュリティの懸念への対応方法</li>
+                <li>作業完了を宣言する前にテストを実行するなどの確認習慣</li>
+            </ul>
+
+            <p>
+                デフォルトでは、カスタム出力スタイルはこれらすべてを削除し、Claude Code はソフトウェアエンジニアアシスタントではなく、汎用アシスタントに近くなります。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>カスタム出力スタイルを書く前に、組み込みスタイルを確認しましょう。<strong>Proactive（自律的）</strong>、<strong>Explanatory（説明的）</strong>、<strong>Learning（学習向け）</strong>は最も一般的なニーズ（自律性・教育モード・協調コーディング）をカバーしており、スタイルファイルを管理する必要がありません。
+                </p>
+            </div>
+
+            <h3>システムプロンプトへの追記</h3>
+
+            <p>
+                出力スタイルファイルを変更する代わりに、<code>append-system-prompt</code> フラグを使う方法があります。出力スタイルファイルを変更すると Claude
+                の動作に大きく意図しない変化が起きる可能性があるのに対し、追記フラグは元のシステムプロンプトに対して加算的なものです。Claude の役割を変更せず、デフォルトの役割に命令を追加するだけです。
+            </p>
+            <p>
+                また呼び出し時に渡されるため、ファイルとしてセッションをまたいで保持されるのではなく、その呼び出しにのみ適用されます。
+            </p>
+            <p>
+                システムプロンプトへの追記は他の方法と比べてコンテキストコストが高くなる場合があります。入力トークンが増加しますが、セッション内の最初のリクエスト後はプロンプトキャッシュでコストが削減されます。より詳細または長いスタイルで出力するよう指示すると、出力トークンも増加します。
+            </p>
+
+            <div class="tip">
+                <strong>💡 ヒント</strong>
+                <p>システムプロンプトへの追記は、特定のコーディング標準、出力フォーマット、ドメイン固有の知識の追加に最適です。この方法は提供する命令が増えるほど遵守の効果が薄れることを念頭に置いてください。特に矛盾する命令がある場合、Claude
+                    はより厳密でなくなります。</p>
+            </div>
+
+            <h2>Claude Code カスタマイズのクイックヒント</h2>
+
+            <p>以下のことをしていると気づいたら、指示の置き場所を変更することを検討してください：</p>
+
+            <p>
+                <strong>CLAUDE.md に「X のたびに、必ず Y せよ」と書く</strong>場合。編集後に prettier を実行したり完了時に Slack
+                に投稿したりするような、確実に実行されるべき動作は、代わりに <code>settings.json</code> のフックを使いましょう。Claude
+                がフォーマッターを実行することを選択するのと、フォーマッターが自動的に実行されるのは別物です。
+            </p>
+
+            <p>
+                <strong>CLAUDE.md に「絶対にこれをするな」と書く</strong>場合。絶対に起きてはならないことがある場合、命令は適切なツールではありません。Claude
+                はほとんどの場合に命令に従いますが、プレッシャー下、長いセッション、曖昧な状況、またはタスクの一部でアクセスされたファイル内のプロンプトインジェクションによって、Claude
+                はプロンプトされたルールに従えない場合があります。本物のガードレールは確定的である必要があり、その強制方法は<a
+                    href="https://code.claude.com/docs/en/hooks">フック</a>と<a
+                    href="https://code.claude.com/docs/en/permissions">パーミッション</a>です。<code>PreToolUse</code>
+                フックは呼び出しを検査してコード 2 で終了することで拒否できます。<a
+                    href="https://code.claude.com/docs/en/settings#managed-settings">管理設定</a>はさらに踏み込みます：管理者がデプロイし、ユーザーのローカル設定では上書きできず、確定的な組織全体のガードレールを強制する唯一の方法です。
+            </p>
+
+            <p>
+                <strong>CLAUDE.md に30行の手順を書く</strong>場合。手順はスキルに属します。CLAUDE.md は Claude
+                が常に保持すべき事実のためのものです：ビルドコマンド、モノレポのレイアウト、チームの規約。デプロイのランブックやセキュリティレビューチェックリストは <code>.claude/skills/</code>
+                に置き、呼び出されたときのみ本文がロードされるようにするべきです。
+            </p>
+
+            <p>
+                <strong>パスなしの API 固有のルールを書く</strong>場合。ルールが <code>src/api/**</code> にのみ適用されるなら、<code>paths:</code>
+                でスコープすることで、無関係の作業中はコンテキスト外に保てます。スコープなしのルールは、コンテキストに常時ロードされてトークンを消費するという点で、CLAUDE.md
+                にコンテキストを書くのと機械的に同じです。
+            </p>
+
+            <p>
+                <strong>プロジェクトレベルの CLAUDE.md に個人の好みを書く</strong>場合。すべてのファイルベースの方法には、どのリポジトリにいても、すべての Claude Code
+                セッションでロードされるユーザーレベルの対応物があります。個人の好みにはローカルファイルを使いましょう（常にセマンティックコミットメッセージを使うなど）。プロジェクトレベルのファイルは、特定のコードベースに固有のチーム全体の好みに使いましょう。
+            </p>
+
+            <h2>はじめに</h2>
+
+            <p>
+                環境の設定から並行セッションへのスケールまで、Claude Code を最大限に活用するためのヒントとパターンは、<a
+                    href="https://code.claude.com/docs/en/best-practices#write-an-effective-claude-md">Claude Code
+                    のベストプラクティス</a>ドキュメントで確認できます。
+            </p>
+
+            <p>
+                これらのいくつかが動作するようになったら、スキル・サブエージェント・フック・出力スタイルを<a
+                    href="https://code.claude.com/docs/en/plugins">プラグイン</a>としてバンドルして、チームメンバーやプロジェクト全体で一貫したセットアップを共有できます。
+            </p>
+
+        </article>
+    </main>
+
+    <footer>
+        <p>
+            翻訳元：<a href="https://claude.com/ja/blog/steering-claude-code-skills-hooks-rules-subagents-and-more">Steering
+                Claude Code: skills, hooks, rules, subagents and more</a><br>
+            © Anthropic PBC — <a href="https://claude.com/ja">claude.com</a>
+        </p>
+    </footer>
+
+</body>
+
+</html>
